@@ -1,0 +1,60 @@
+name: jfstack-jdownloader
+services:
+  jdownloader:
+    image: jlesage/jdownloader-2:${JDOWNLOADER_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8080}:8000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${JD_WEB_PORT:-5800}:5800"
+    environment:
+      USER_ID: ${PUID:-1000}
+      GROUP_ID: ${PGID:-1000}
+      TZ: ${TZ:-Etc/UTC}
+      UMASK: '0077'
+      SECURE_CONNECTION: '1'
+      WEB_AUTHENTICATION: '1'
+      WEB_AUTHENTICATION_USERNAME: ${JD_WEB_USERNAME:-admin}
+      WEB_AUTHENTICATION_PASSWORD: ${JD_WEB_PASSWORD:?Run python3 scripts/init_env.py first}
+      VNC_LISTENING_PORT: '-1'
+      WEB_TERMINAL: '0'
+      WEB_FILE_MANAGER: '0'
+    volumes:
+      - ${JD_CONFIG_PATH:-./data/config}:/config
+      - ${JD_DOWNLOADS_PATH:-./data/downloads}:/output
+    networks:
+      - downloader
+
+  app:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    # JDownloader's Click'n'Load normally listens on 127.0.0.1:9666.
+    # Share only this project's network namespace; never publish 9666.
+    network_mode: "service:jdownloader"
+    depends_on:
+      - jdownloader
+    user: "${PUID:-1000}:${PGID:-1000}"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,noexec,size=32m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      APP_USERNAME: ${APP_USERNAME:-admin}
+      APP_PASSWORD: ${APP_PASSWORD:?Run python3 scripts/init_env.py first}
+      APP_DB_PATH: /app/data/jobs.sqlite3
+      APP_MAX_BATCH: ${APP_MAX_BATCH:-20}
+      APP_WORKERS: ${APP_WORKERS:-2}
+      APP_REQUEST_TIMEOUT: ${APP_REQUEST_TIMEOUT:-12}
+      APP_MAX_HOPS: ${APP_MAX_HOPS:-8}
+      JD_CNL_URL: http://127.0.0.1:9666
+      PYTHONUNBUFFERED: '1'
+      HOME: /tmp
+    volumes:
+      - ${APP_DATA_PATH:-./data/app}:/app/data
+
+networks:
+  downloader:
+    internal: false

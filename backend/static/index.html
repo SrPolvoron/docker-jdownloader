@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <title>JFStack Downloader</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="logo">J</span><div><strong>JFStack <span>Downloader</span></strong><small>JDownloader 2 + URL Resolver</small></div></div>
+      <div class="status" id="jd-state"><span class="dot"></span>Checking JDownloader…</div>
+    </header>
+    <section class="hero"><p class="eyebrow">PRIVATE DOWNLOAD CENTER</p><h1>Paste it. Resolve it.<br><em>Download it.</em></h1>
+      <p class="intro">Submit direct links or advertising shorteners. Safe redirects are resolved and passed to JDownloader's LinkGrabber. CAPTCHA and unsupported pages require your review.</p>
+    </section>
+    <section class="panel">
+      <div class="section-title"><h2>Add links</h2><span>One URL per line · Up to <span id="max-batch">20</span> per batch</span></div>
+      <label class="sr" for="links">Download URLs</label>
+      <textarea id="links" placeholder="https://example.com/your-link&#10;https://shortener.example/another-link" spellcheck="false"></textarea>
+      <div class="actions"><button id="add-btn" type="button">↳ Resolve & send</button><span id="notification" aria-live="polite"></span></div>
+    </section>
+    <section class="panel history">
+      <div class="section-title"><h2>Recent jobs</h2><button id="refresh-btn" type="button" class="subtle">↻ Refresh</button></div>
+      <p class="help">"Sent" means submitted to LinkGrabber, not that a file finished downloading. Open JDownloader to inspect/download the links.</p>
+      <div id="job-list" class="job-list" aria-live="polite"><p class="empty">No jobs yet.</p></div>
+    </section>
+    <footer>JFStack · Independent Docker deployment · No shared downloader volumes</footer>
+  </main>
+</body>
+</html>

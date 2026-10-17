@@ -1,0 +1,14 @@
+# Architecture freeze (0.1.0)
+
+- **Scope:** independent Docker Compose project, Linux host, single administrator, single JDownloader instance. Deployment on localhost by default; SSH tunneling or a correctly configured private TLS reverse proxy for remote access.
+- **Execution:** `jlesage/jdownloader-2` for GUI/downloads, FastAPI service for URL intake and HTML/HTTP redirects, SQLite for durable jobs.
+- **Integration:** Click'n'Load on JD's 127.0.0.1:9666. App shares JD network namespace, not storage or credentials; `sent` denotes *handoff*, not completed download.
+- **Isolation:** app can access JD's local CNL endpoint but cannot mount JD config/downloads. Host published ports bind 127.0.0.1. JD's GUI has its own HTTPS authentication. App requires HTTP Basic over loopback, SSH or a trusted private HTTPS ingress.
+- **Workers:** two by default, persistent queued jobs, automatically reset `resolving` to queued after process restart. Retries are explicit; an unknown JD handoff state can cause a duplicate upon retry. Review LinkGrabber before retrying.
+- **URL support:** ordinary public HTTP(S) URLs, allowlisted hosting platforms passed directly to JD, HTTP 3xx redirects, HTML meta refresh, trivial static JavaScript navigation. No JavaScript runtime for shorteners with timers, script-calculated endpoints, login, captcha, or user gestures. Return `manual` for known blocks and `ready` when JD is unavailable.
+- **SSRF:** public-only DNS (all returned addresses), only ports 80/443, no userinfo, explicit per-hop validation, aiohttp resolver pins connections to verified IPs. JD's own crawlers can still process URLs independently; only trusted administrators may submit URLs.
+- **Data:** `/config` and `/output` mounts exclusive to JD, `/app/data/jobs.sqlite3` exclusive to intake app, no other Docker stacks referenced. Back up all 3 volumes with consistent service shutdown.
+- **Upgrade/rollback:** pin JDownloader image tag deliberately for reproducibility; its default `latest` pulls updates only when requested. SQLite has no schema migrations in v0.1. Stop, back up, recreate, and verify before upgrading. Restoring old volumes is the rollback strategy for incompatible upgrades.
+- **Accepted debt:** no independent real-time download progress dashboard, no embedded CAPTCHA UI, no Chromium sandbox, no hoster-specific ad-shortener plugins, basic auth instead of multiuser identity, no full end-to-end smoke test in an environment without Docker.
+- **Future triggers:** add isolated browser resolver only with restrictive network egress; add provider plugins after real sample URLs and legal/technical evaluation; add DB migrations with the first schema change; add JD progress API if users need native UI replacement.
+- **Acceptance:** local development confidence via tests and static checks; production runtime smoke test requires Docker host with image download capability.
